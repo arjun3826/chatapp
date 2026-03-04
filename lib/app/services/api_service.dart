@@ -9,7 +9,8 @@ import '../models/user.dart';
 
 class ApiService extends GetxService {
   final String baseUrl =
-      const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000');
+      const String.fromEnvironment('API_BASE_URL', defaultValue: 'https://dodo-magnetic-rabbit.ngrok-free.app');
+        // const String.fromEnvironment('API_BASE_URL', defaultValue: 'https://chatapp-tum0.onrender.com');
   final http.Client _client = http.Client();
 
   Future<AppUser> register({
@@ -176,6 +177,18 @@ class ApiService extends GetxService {
     }
     final data = jsonDecode(response.body) as Map<String, dynamic>;
     return ChatMessage.fromJson(data);
+  }
+
+  Future<void> deleteMessage({
+    required String messageId,
+    required String requesterId,
+  }) async {
+    final uri =
+        Uri.parse('$baseUrl/messages/$messageId?requester_id=$requesterId');
+    final response = await _client.delete(uri);
+    if (response.statusCode >= 400) {
+      throw Exception(_errorMessage(response));
+    }
   }
 
   String _errorMessage(http.Response response) {

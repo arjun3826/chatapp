@@ -52,6 +52,9 @@ class MessageCreateRequest(BaseModel):
     sender_id: str
     content: str
 
+class DeleteMessageRequest(BaseModel):
+    requester_id: str
+
 class LookupRequest(BaseModel):
     phones: list[str]
     requester_id: str | None = None
@@ -401,6 +404,30 @@ async def create_message(room_id: str, body: MessageCreateRequest):
         payload = serialize_message(new_message)
         await manager.broadcast(room_id, json.dumps(payload))
         return payload
+
+@app.delete("/messages/{message_id}")
+async def delete_message(message_id: str, requester_id: str):
+    async with AsyncSessionLocal() as session:
+        try:
+            message_uuid = uuid.UUID(message_id)
+            requester_uuid = uuid.UUID(requester_id)
+        except ValueError:
+            raise HTTPException(status_code=400, detail="Invalid id")
+
+        result = await session.execute(
+            select(Message).where(Message.id == message_uuid)
+        )
+        message = result.scalars().first()
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+
+        if message.sender_id != requester_uuid:
+            raise HTTPException(status_code=403, detail="Not allowed")
+
+        await session.delete(message)
+        await session.commit()
+
+        return {"deleted": True, "id": message_id}
 
 @app.websocket("/ws/{room_id}/{user_id}")
 async def websocket_endpoint(websocket: WebSocket, room_id: str, user_id: str):

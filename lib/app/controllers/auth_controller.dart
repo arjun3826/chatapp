@@ -24,6 +24,13 @@ class AuthController extends GetxController {
     _restoreSession();
   }
 
+  ChatController _chatController() {
+    if (Get.isRegistered<ChatController>()) {
+      return Get.find<ChatController>();
+    }
+    return Get.put(ChatController(), permanent: true);
+  }
+
   Future<void> _restoreSession() async {
     try {
       final data = _storage.readAuth();
@@ -31,7 +38,7 @@ class AuthController extends GetxController {
         token.value = data['token']?.toString() ?? '';
         final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
         currentUser.value = user;
-        Get.find<ChatController>().initForUser(user);
+        _chatController().initForUser(user);
       }
     } finally {
       isReady.value = true;
@@ -55,7 +62,7 @@ class AuthController extends GetxController {
       );
       currentUser.value = user;
       await _storage.saveAuth(token: token.value, user: user.toJson());
-      Get.find<ChatController>().initForUser(user);
+      _chatController().initForUser(user);
       Get.offAllNamed(Routes.home);
     } catch (e) {
       error.value = e.toString().replaceFirst('Exception: ', '');
@@ -77,7 +84,7 @@ class AuthController extends GetxController {
       final user = AppUser.fromJson(data['user'] as Map<String, dynamic>);
       currentUser.value = user;
       await _storage.saveAuth(token: token.value, user: user.toJson());
-      Get.find<ChatController>().initForUser(user);
+      _chatController().initForUser(user);
       Get.offAllNamed(Routes.home);
     } catch (e) {
       error.value = e.toString().replaceFirst('Exception: ', '');
@@ -90,7 +97,7 @@ class AuthController extends GetxController {
     currentUser.value = null;
     token.value = '';
     _storage.clearAuth();
-    Get.find<ChatController>().reset();
+    _chatController().reset();
     Get.offAllNamed(Routes.login);
   }
 

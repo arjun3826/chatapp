@@ -23,6 +23,10 @@ class ChatListScreen extends StatelessWidget {
             onPressed: () => Get.toNamed(Routes.settings),
             icon: const Icon(Icons.settings),
           ),
+          IconButton(
+            onPressed: () => Get.toNamed(Routes.profile),
+            icon: const Icon(Icons.person),
+          ),
         ],
       ),
       body: Obx(

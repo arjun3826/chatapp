@@ -9,10 +9,12 @@ class ChatBubble extends StatelessWidget {
     super.key,
     required this.message,
     required this.isMe,
+    this.onLongPress,
   });
 
   final ChatMessage message;
   final bool isMe;
+  final VoidCallback? onLongPress;
 
   @override
   Widget build(BuildContext context) {
@@ -32,27 +34,30 @@ class ChatBubble extends StatelessWidget {
     return Column(
       crossAxisAlignment: align,
       children: [
-        Container(
-          constraints: const BoxConstraints(maxWidth: 280),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: bubbleColor,
-            borderRadius: radius,
-          ),
-          child: message.type == MessageType.image
-              ? ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: CachedNetworkImage(
-                    imageUrl: message.content,
-                    width: 220,
-                    height: 160,
-                    fit: BoxFit.cover,
+        GestureDetector(
+          onLongPress: onLongPress,
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 280),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: bubbleColor,
+              borderRadius: radius,
+            ),
+            child: message.type == MessageType.image
+                ? ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: CachedNetworkImage(
+                      imageUrl: message.content,
+                      width: 220,
+                      height: 160,
+                      fit: BoxFit.cover,
+                    ),
+                  )
+                : Text(
+                    message.content,
+                    style: Theme.of(context).textTheme.bodyMedium,
                   ),
-                )
-              : Text(
-                  message.content,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                ),
+          ),
         ),
         const SizedBox(height: 4),
         Text(

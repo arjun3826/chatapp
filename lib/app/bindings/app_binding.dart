@@ -10,7 +10,7 @@ class AppBinding extends Bindings {
   void dependencies() {
     Get.put(ApiService(), permanent: true);
     Get.put(WebSocketService(), permanent: true);
-    Get.put(AuthController(), permanent: true);
     Get.put(ChatController(), permanent: true);
+    Get.put(AuthController(), permanent: true);
   }
 }

@@ -106,14 +106,74 @@ class ChatController extends GetxController {
 
   Future<void> sendText(String text) async {
     final roomId = activeRoomId.value;
-    if (roomId == null || _currentUser == null || text.trim().isEmpty) return;
-    _webSocketService.send(text.trim());
+    final user = _currentUser;
+    final trimmed = text.trim();
+    if (roomId == null || user == null || trimmed.isEmpty) return;
+    if (_webSocketService.status.value == SocketStatus.connected) {
+      _webSocketService.send(trimmed);
+      return;
+    }
+    try {
+      error.value = '';
+      final message = await _apiService.createMessage(
+        roomId: roomId,
+        senderId: user.id,
+        content: trimmed,
+      );
+      _onIncomingMessage(message);
+    } catch (e) {
+      error.value = e.toString().replaceFirst('Exception: ', '');
+    }
   }
 
   Future<void> sendImage(String url) async {
     final roomId = activeRoomId.value;
-    if (roomId == null || _currentUser == null) return;
-    _webSocketService.send(url);
+    final user = _currentUser;
+    if (roomId == null || user == null) return;
+    final trimmed = url.trim();
+    if (trimmed.isEmpty) return;
+    if (_webSocketService.status.value == SocketStatus.connected) {
+      _webSocketService.send(trimmed);
+      return;
+    }
+    try {
+      error.value = '';
+      final message = await _apiService.createMessage(
+        roomId: roomId,
+        senderId: user.id,
+        content: trimmed,
+      );
+      _onIncomingMessage(message);
+    } catch (e) {
+      error.value = e.toString().replaceFirst('Exception: ', '');
+    }
+  }
+
+  Future<void> deleteMessage(ChatMessage message) async {
+    final user = _currentUser;
+    if (user == null) return;
+    if (message.senderId != user.id) return;
+    final roomId = message.roomId;
+    final existing = List<ChatMessage>.from(messagesByRoom[roomId] ?? <ChatMessage>[]);
+    final index = existing.indexWhere((item) => item.id == message.id);
+    if (index == -1) return;
+    final removed = existing.removeAt(index);
+    messagesByRoom[roomId] = existing;
+    messagesByRoom.refresh();
+    _updateRoomLastMessage(roomId, existing.isNotEmpty ? existing.last : null);
+    try {
+      error.value = '';
+      await _apiService.deleteMessage(
+        messageId: message.id,
+        requesterId: user.id,
+      );
+    } catch (e) {
+      existing.insert(index, removed);
+      messagesByRoom[roomId] = existing;
+      messagesByRoom.refresh();
+      _updateRoomLastMessage(roomId, existing.isNotEmpty ? existing.last : null);
+      error.value = e.toString().replaceFirst('Exception: ', '');
+    }
   }
 
   List<ChatMessage> messagesForRoom(String roomId) {

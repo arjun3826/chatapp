@@ -17,6 +17,13 @@ class WebSocketService extends GetxService {
 
   Stream<ChatMessage> get messagesStream => _messageController.stream;
 
+  String _joinedPath(String basePath, List<String> segments) {
+    final baseSegments = Uri.parse('http://x$basePath').pathSegments
+        .where((segment) => segment.isNotEmpty)
+        .toList();
+    return '/${[...baseSegments, ...segments].join('/')}';
+  }
+
   Future<void> connect({
     required String baseUrl,
     required String roomId,
@@ -24,8 +31,14 @@ class WebSocketService extends GetxService {
   }) async {
     disconnect();
     status.value = SocketStatus.connecting;
-    final wsUrl = baseUrl.replaceFirst('http', 'ws');
-    final uri = Uri.parse('$wsUrl/ws/$roomId/$userId');
+    final baseUri = Uri.parse(baseUrl);
+    final wsScheme = baseUri.scheme == 'https' ? 'wss' : 'ws';
+    final uri = baseUri.replace(
+      scheme: wsScheme,
+      path: _joinedPath(baseUri.path, ['ws', roomId, userId]),
+      query: '',
+      fragment: '',
+    );
     _channel = WebSocketChannel.connect(uri);
     status.value = SocketStatus.connected;
     _channel?.stream.listen(

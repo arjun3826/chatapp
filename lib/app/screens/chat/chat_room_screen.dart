@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../controllers/auth_controller.dart';
 import '../../controllers/chat_controller.dart';
+import '../../models/message.dart';
 import '../../models/room.dart';
 import '../../services/websocket_service.dart';
 import '../../widgets/chat_bubble.dart';
@@ -42,17 +43,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final userId = authController.currentUser.value?.id ?? '';
     return Scaffold(
       appBar: AppBar(
-        title: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        title: Row(
           children: [
-            Text(room.name),
-            Obx(
-              () => Text(
-                _statusLabel(chatController.socketStatus),
-                style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                      color: Colors.white70,
-                    ),
-              ),
+            CircleAvatar(
+              backgroundColor: Colors.blueAccent,
+              child: Text(room.name[0]),
+            ),
+            const SizedBox(width: 8),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(room.name),
+                Obx(
+                  () => Text(
+                    _statusLabel(chatController.socketStatus),
+                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                          color: Colors.white70,
+                        ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
@@ -79,7 +89,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             ? MainAxisAlignment.end
                             : MainAxisAlignment.start,
                         children: [
-                          ChatBubble(message: message, isMe: isMe),
+                          ChatBubble(
+                            message: message,
+                            isMe: isMe,
+                            onLongPress: isMe
+                                ? () => _confirmDelete(
+                                      context,
+                                      chatController,
+                                      message,
+                                    )
+                                : null,
+                          ),
                         ],
                       ),
                     );
@@ -164,11 +184,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 title: const Text('Send sample image'),
                 onTap: () => Navigator.pop(context, 'sample'),
               ),
-              ListTile(
-                leading: const Icon(Icons.link),
-                title: const Text('Send image URL'),
-                onTap: () => Navigator.pop(context, 'url'),
-              ),
             ],
           ),
         );
@@ -206,6 +221,35 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (url != null && url.trim().isNotEmpty) {
         chatController.sendImage(url.trim());
       }
+    }
+  }
+
+  Future<void> _confirmDelete(
+    BuildContext context,
+    ChatController chatController,
+    ChatMessage message,
+  ) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Delete message?'),
+          content: const Text('This will delete the message for you.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Delete'),
+            ),
+          ],
+        );
+      },
+    );
+    if (shouldDelete == true) {
+      await chatController.deleteMessage(message);
     }
   }
 }
