@@ -8,7 +8,8 @@ import '../models/room.dart';
 import '../models/user.dart';
 
 class ApiService extends GetxService {
-  final String baseUrl = 'https://dodo-magnetic-rabbit.ngrok-free.app';
+  final String baseUrl =
+      const String.fromEnvironment('API_BASE_URL', defaultValue: 'http://localhost:8000');
   final http.Client _client = http.Client();
 
   Future<AppUser> register({

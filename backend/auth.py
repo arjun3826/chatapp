@@ -1,9 +1,10 @@
 import bcrypt
 import jwt
+import os
 from datetime import datetime, timedelta
 
-SECRET_KEY = "supersecretkey"
-ALGORITHM = "HS256"
+SECRET_KEY = os.getenv("JWT_SECRET_KEY") or os.getenv("SECRET_KEY") or "supersecretkey"
+ALGORITHM = os.getenv("JWT_ALGORITHM") or "HS256"
 
 def hash_password(password: str) -> str:
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")

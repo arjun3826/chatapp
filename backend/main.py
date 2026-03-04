@@ -1,9 +1,11 @@
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from sqlalchemy.future import select
 from sqlalchemy import and_, or_
 import json
 import uuid
+import os
 from datetime import datetime
 
 from websocket_manager import manager
@@ -12,6 +14,24 @@ from database import engine
 from models import Base, Message, Room, User
 from auth import hash_password, verify_password, create_access_token
 app = FastAPI()
+
+cors_origins_raw = os.getenv("CORS_ORIGINS") or "*"
+cors_origins = (
+    ["*"]
+    if cors_origins_raw.strip() == "*"
+    else [origin.strip() for origin in cors_origins_raw.split(",") if origin.strip()]
+)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=cors_origins,
+    allow_credentials=cors_origins != ["*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 class RegisterRequest(BaseModel):
     name: str
